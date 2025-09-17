@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Library Test Page</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table { border-collapse: collapse; margin-top: 10px; }
+        td, th { border: 1px solid black; padding: 5px 10px; }
+        input { margin: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Library Test Page</h1>
+
+    <h2>Books</h2>
+    <button onclick="loadBooks()">Refresh list</button>
+    <label><input type="checkbox" id="onlyAvailable" onchange="loadBooks()"> only available</label>
+    <table>
+        <thead>
+            <tr><th>Title</th><th>Author</th><th>ISBN</th><th>Status</th></tr>
+        </thead>
+        <tbody id="bookRows"></tbody>
+    </table>
+
+    <h2>Add book</h2>
+    Title: <input id="newTitle" size="25">
+    Author: <input id="newAuthor" size="20">
+    ISBN: <input id="newIsbn" size="18">
+    <button onclick="addBook()">Add</button>
+
+    <h2>Borrow / Return</h2>
+    ISBN: <input id="actionIsbn" size="18">
+    <button onclick="borrowBook()">Borrow</button>
+    <button onclick="returnBook()">Return</button>
+
+    <p id="message"></p>
+
+    <script>
+        function showMessage(text) {
+            document.getElementById("message").innerText = text;
+        }
+
+        function loadBooks() {
+            var onlyAvailable = document.getElementById("onlyAvailable").checked;
+            var url = "/api/books";
+            if (onlyAvailable) {
+                url = "/api/books/available";
+            }
+            fetch(url).then(function (res) {
+                return res.json();
+            }).then(function (books) {
+                var html = "";
+                for (var i = 0; i < books.length; i++) {
+                    var status = "Available";
+                    if (books[i].borrowed) {
+                        status = "Borrowed";
+                    }
+                    html += "<tr><td>" + books[i].title + "</td><td>" + books[i].author + "</td><td>" + books[i].isbn + "</td><td>" + status + "</td></tr>";
+                }
+                document.getElementById("bookRows").innerHTML = html;
+            });
+        }
+
+        function addBook() {
+            var data = {
+                title: document.getElementById("newTitle").value,
+                author: document.getElementById("newAuthor").value,
+                isbn: document.getElementById("newIsbn").value
+            };
+            fetch("/api/books", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(function (res) {
+                return res.json();
+            }).then(function (answer) {
+                showMessage(JSON.stringify(answer));
+                loadBooks();
+            });
+        }
+
+        function borrowBook() {
+            var isbn = document.getElementById("actionIsbn").value;
+            fetch("/api/books/" + isbn + "/borrow", { method: "POST" }).then(function (res) {
+                return res.json();
+            }).then(function (answer) {
+                showMessage(JSON.stringify(answer));
+                loadBooks();
+            });
+        }
+
+        function returnBook() {
+            var isbn = document.getElementById("actionIsbn").value;
+            fetch("/api/books/" + isbn + "/return", { method: "POST" }).then(function (res) {
+                return res.json();
+            }).then(function (answer) {
+                showMessage(JSON.stringify(answer));
+                loadBooks();
+            });
+        }
+
+        loadBooks();
+    </script>
+</body>
+</html>
