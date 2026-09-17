@@ -1,0 +1,801 @@
+library-management-system
+========================
+
+tree:
+
+library-project/
+├── .gitignore
+├── README.md
+├── data/
+│   └── books.csv
+├── src/
+│   ├── Book.java
+│   ├── Library.java
+│   └── Main.java
+└── web/
+    ├── pom.xml
+    └── src/main/java/com/example/library/
+        ├── Book.java
+        ├── LibraryApp.java
+        ├── LibraryController.java
+        └── LibraryService.java
+    └── src/main/resources/
+        ├── application.properties
+        └── static/index.html
+
+
+--- FILE: library-project/.gitignore ---
+
+out/
+target/
+*.class
+
+
+--- FILE: library-project/README.md ---
+
+# Library Management System
+
+School project for CSC548. Basic system to manage books in a library.
+
+## What it does
+
+- Add new books with title, author, and ISBN
+- List all available books
+- Borrow a book by ISBN
+- Return a book by ISBN
+- Checks that ISBN looks valid (10 or 13 digits, dashes ok)
+
+## Files
+
+- `src/Book.java` - book class with ISBN check
+- `src/Library.java` - list of books, borrow and return
+- `src/Main.java` - demo program
+- `data/books.csv` - starter books (title,author,isbn format)
+
+## How to run
+
+You need Java 17.
+
+```
+javac -d out src/*.java
+java -cp out Main
+```
+
+The demo loads `data/books.csv`, adds one book, borrows one, returns it, and prints the lists.
+
+## Dataset
+
+Starter data in `data/books.csv` follows the same format as Kaggle book datasets (title, author, isbn). Just a few classic books to test with.
+
+
+--- FILE: library-project/data/books.csv ---
+
+title,author,isbn
+Pride and Prejudice,Jane Austen,9780141439518
+Moby Dick,Herman Melville,9780142437247
+Frankenstein,Mary Shelley,9780486282114
+Dracula,Bram Stoker,9780486411095
+Jane Eyre,Charlotte Bronte,9780141441146
+Wuthering Heights,Emily Bronte,9780141439556
+Great Expectations,Charles Dickens,9780141439563
+The Time Machine,H. G. Wells,9780486284729
+
+
+--- FILE: library-project/src/Book.java ---
+
+import java.util.ArrayList;
+
+public class Book {
+
+    private String title;
+    private String author;
+    private String isbn;
+    private boolean isBorrowed;
+
+    public Book(String title, String author, String isbn) {
+        if (title == null || title.trim().equals("")) {
+            throw new IllegalArgumentException("Title cannot be empty.");
+        }
+        if (author == null || author.trim().equals("")) {
+            throw new IllegalArgumentException("Author cannot be empty.");
+        }
+        if (isValidIsbn(isbn) == false) {
+            throw new IllegalArgumentException("ISBN is not valid: " + isbn);
+        }
+
+        this.title = title.trim();
+        this.author = author.trim();
+        this.isbn = isbn.trim();
+        this.isBorrowed = false;
+    }
+
+    public static boolean isValidIsbn(String isbn) {
+        if (isbn == null) {
+            return false;
+        }
+
+        String cleaned = isbn.replace("-", "").replace(" ", "");
+
+        if (cleaned.length() == 10) {
+            for (int i = 0; i < 9; i++) {
+                if (Character.isDigit(cleaned.charAt(i)) == false) {
+                    return false;
+                }
+            }
+            char last = cleaned.charAt(9);
+            if (Character.isDigit(last) == false && last != 'X' && last != 'x') {
+                return false;
+            }
+            return true;
+        } else if (cleaned.length() == 13) {
+            for (int i = 0; i < 13; i++) {
+                if (Character.isDigit(cleaned.charAt(i)) == false) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public String getIsbn() {
+        return isbn;
+    }
+
+    public boolean isAvailable() {
+        if (isBorrowed == true) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    public boolean isBorrowed() {
+        return isBorrowed;
+    }
+
+    public void setBorrowed(boolean borrowed) {
+        this.isBorrowed = borrowed;
+    }
+
+    public String toString() {
+        String status = "";
+        if (isBorrowed == true) {
+            status = "Borrowed";
+        } else {
+            status = "Available";
+        }
+        return title + " by " + author + " (ISBN: " + isbn + ") - " + status;
+    }
+}
+
+
+--- FILE: library-project/src/Library.java ---
+
+import java.util.ArrayList;
+
+public class Library {
+
+    private ArrayList<Book> books;
+
+    public Library() {
+        books = new ArrayList<Book>();
+    }
+
+    public boolean addBook(String title, String author, String isbn) {
+        if (Book.isValidIsbn(isbn) == false) {
+            System.out.println("Cannot add book. Bad ISBN: " + isbn);
+            return false;
+        }
+
+        Book existing = findByIsbn(isbn);
+        if (existing != null) {
+            System.out.println("Cannot add book. ISBN already exists: " + isbn);
+            return false;
+        }
+
+        try {
+            Book newBook = new Book(title, author, isbn);
+            books.add(newBook);
+            return true;
+        } catch (IllegalArgumentException e) {
+            System.out.println("Cannot add book. " + e.getMessage());
+            return false;
+        }
+    }
+
+    public ArrayList<Book> listAvailableBooks() {
+        ArrayList<Book> result = new ArrayList<Book>();
+        for (int i = 0; i < books.size(); i++) {
+            Book b = books.get(i);
+            if (b.isAvailable() == true) {
+                result.add(b);
+            }
+        }
+        return result;
+    }
+
+    public boolean borrowBook(String isbn) {
+        Book book = findByIsbn(isbn);
+        if (book == null) {
+            System.out.println("Book not found: " + isbn);
+            return false;
+        }
+        if (book.isBorrowed() == true) {
+            System.out.println("Book already borrowed: " + book.getTitle());
+            return false;
+        }
+        book.setBorrowed(true);
+        return true;
+    }
+
+    public boolean returnBook(String isbn) {
+        Book book = findByIsbn(isbn);
+        if (book == null) {
+            System.out.println("Book not found: " + isbn);
+            return false;
+        }
+        if (book.isBorrowed() == false) {
+            System.out.println("Book was not borrowed: " + book.getTitle());
+            return false;
+        }
+        book.setBorrowed(false);
+        return true;
+    }
+
+    public Book findByIsbn(String isbn) {
+        if (isbn == null) {
+            return null;
+        }
+        String wanted = isbn.replace("-", "").replace(" ", "");
+        for (int i = 0; i < books.size(); i++) {
+            Book b = books.get(i);
+            String have = b.getIsbn().replace("-", "").replace(" ", "");
+            if (have.equals(wanted)) {
+                return b;
+            }
+        }
+        return null;
+    }
+
+    public ArrayList<Book> getAllBooks() {
+        return books;
+    }
+
+    public int getBookCount() {
+        return books.size();
+    }
+}
+
+
+--- FILE: library-project/src/Main.java ---
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.ArrayList;
+
+public class Main {
+
+    public static void main(String[] args) {
+        Library library = new Library();
+
+        loadBooksFromCsv(library, "data/books.csv");
+
+        System.out.println("=== Available books ===");
+        printBooks(library.listAvailableBooks());
+
+        System.out.println("");
+        System.out.println("=== Adding a new book ===");
+        boolean added = library.addBook("Dune", "Frank Herbert", "9780441172719");
+        if (added == true) {
+            System.out.println("Book added.");
+        }
+
+        System.out.println("");
+        System.out.println("=== Adding a book with bad ISBN ===");
+        library.addBook("Bad Book", "No One", "123");
+
+        System.out.println("");
+        System.out.println("=== Borrowing first book ===");
+        ArrayList<Book> available = library.listAvailableBooks();
+        if (available.size() > 0) {
+            String isbnToBorrow = available.get(0).getIsbn();
+            library.borrowBook(isbnToBorrow);
+            System.out.println("Borrowed: " + available.get(0).getTitle());
+        }
+
+        System.out.println("");
+        System.out.println("=== Available books after borrow ===");
+        printBooks(library.listAvailableBooks());
+
+        System.out.println("");
+        System.out.println("=== Returning the book ===");
+        if (available.size() > 0) {
+            String isbnToReturn = available.get(0).getIsbn();
+            library.returnBook(isbnToReturn);
+            System.out.println("Returned: " + available.get(0).getTitle());
+        }
+
+        System.out.println("");
+        System.out.println("=== Final available books ===");
+        printBooks(library.listAvailableBooks());
+    }
+
+    public static void loadBooksFromCsv(Library library, String filePath) {
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(filePath));
+            String line = reader.readLine();
+            int count = 0;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",", 3);
+                if (parts.length < 3) {
+                    continue;
+                }
+                String title = parts[0].trim();
+                String author = parts[1].trim();
+                String isbn = parts[2].trim();
+                boolean ok = library.addBook(title, author, isbn);
+                if (ok == true) {
+                    count = count + 1;
+                }
+            }
+            reader.close();
+            System.out.println("Loaded " + count + " books from " + filePath);
+            System.out.println("");
+        } catch (Exception e) {
+            System.out.println("Could not load CSV file: " + filePath);
+            System.out.println("Error was: " + e.getMessage());
+        }
+    }
+
+    public static void printBooks(ArrayList<Book> books) {
+        if (books.size() == 0) {
+            System.out.println("No books available.");
+            return;
+        }
+        for (int i = 0; i < books.size(); i++) {
+            System.out.println((i + 1) + ". " + books.get(i).toString());
+        }
+    }
+}
+
+
+--- FILE: library-project/web/pom.xml ---
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.example</groupId>
+    <artifactId>library-web</artifactId>
+    <version>0.1.0</version>
+    <name>library-web</name>
+    <description>Basic test frontend for Library Management System</description>
+
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
+
+--- FILE: library-project/web/src/main/java/com/example/library/Book.java ---
+
+package com.example.library;
+
+public class Book {
+
+    private String title;
+    private String author;
+    private String isbn;
+    private boolean borrowed;
+
+    public Book() {
+    }
+
+    public Book(String title, String author, String isbn) {
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
+        this.borrowed = false;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public String getIsbn() {
+        return isbn;
+    }
+
+    public void setIsbn(String isbn) {
+        this.isbn = isbn;
+    }
+
+    public boolean isBorrowed() {
+        return borrowed;
+    }
+
+    public void setBorrowed(boolean borrowed) {
+        this.borrowed = borrowed;
+    }
+
+    public boolean isAvailable() {
+        if (borrowed == true) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+}
+
+
+--- FILE: library-project/web/src/main/java/com/example/library/LibraryApp.java ---
+
+package com.example.library;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class LibraryApp {
+
+    public static void main(String[] args) {
+        SpringApplication.run(LibraryApp.class, args);
+    }
+}
+
+
+--- FILE: library-project/web/src/main/java/com/example/library/LibraryController.java ---
+
+package com.example.library;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/books")
+public class LibraryController {
+
+    private LibraryService library;
+
+    public LibraryController(LibraryService library) {
+        this.library = library;
+    }
+
+    @GetMapping
+    public ArrayList<Book> getAll() {
+        return library.getAllBooks();
+    }
+
+    @GetMapping("/available")
+    public ArrayList<Book> getAvailable() {
+        return library.getAvailableBooks();
+    }
+
+    @PostMapping
+    public HashMap<String, String> add(@RequestBody Book book) {
+        HashMap<String, String> answer = new HashMap<String, String>();
+        String error = library.addBook(book);
+        if (error == null) {
+            answer.put("status", "ok");
+        } else {
+            answer.put("status", "error");
+            answer.put("message", error);
+        }
+        return answer;
+    }
+
+    @PostMapping("/{isbn}/borrow")
+    public HashMap<String, String> borrow(@PathVariable String isbn) {
+        HashMap<String, String> answer = new HashMap<String, String>();
+        String error = library.borrowBook(isbn);
+        if (error == null) {
+            answer.put("status", "ok");
+        } else {
+            answer.put("status", "error");
+            answer.put("message", error);
+        }
+        return answer;
+    }
+
+    @PostMapping("/{isbn}/return")
+    public HashMap<String, String> giveBack(@PathVariable String isbn) {
+        HashMap<String, String> answer = new HashMap<String, String>();
+        String error = library.returnBook(isbn);
+        if (error == null) {
+            answer.put("status", "ok");
+        } else {
+            answer.put("status", "error");
+            answer.put("message", error);
+        }
+        return answer;
+    }
+}
+
+
+--- FILE: library-project/web/src/main/java/com/example/library/LibraryService.java ---
+
+package com.example.library;
+
+import java.util.ArrayList;
+import org.springframework.stereotype.Service;
+
+@Service
+public class LibraryService {
+
+    private ArrayList<Book> books = new ArrayList<Book>();
+
+    public LibraryService() {
+        books.add(new Book("Pride and Prejudice", "Jane Austen", "9780141439518"));
+        books.add(new Book("Moby Dick", "Herman Melville", "9780142437247"));
+        books.add(new Book("Frankenstein", "Mary Shelley", "9780486282114"));
+    }
+
+    public ArrayList<Book> getAllBooks() {
+        return books;
+    }
+
+    public ArrayList<Book> getAvailableBooks() {
+        ArrayList<Book> result = new ArrayList<Book>();
+        for (int i = 0; i < books.size(); i++) {
+            if (books.get(i).isAvailable() == true) {
+                result.add(books.get(i));
+            }
+        }
+        return result;
+    }
+
+    public String addBook(Book book) {
+        if (book.getTitle() == null || book.getTitle().trim().equals("")) {
+            return "Title cannot be empty.";
+        }
+        if (book.getAuthor() == null || book.getAuthor().trim().equals("")) {
+            return "Author cannot be empty.";
+        }
+        if (isValidIsbn(book.getIsbn()) == false) {
+            return "Bad ISBN: " + book.getIsbn();
+        }
+        if (findByIsbn(book.getIsbn()) != null) {
+            return "ISBN already exists: " + book.getIsbn();
+        }
+        book.setTitle(book.getTitle().trim());
+        book.setAuthor(book.getAuthor().trim());
+        book.setIsbn(book.getIsbn().trim());
+        book.setBorrowed(false);
+        books.add(book);
+        return null;
+    }
+
+    public String borrowBook(String isbn) {
+        Book book = findByIsbn(isbn);
+        if (book == null) {
+            return "Book not found: " + isbn;
+        }
+        if (book.isBorrowed() == true) {
+            return "Book already borrowed: " + book.getTitle();
+        }
+        book.setBorrowed(true);
+        return null;
+    }
+
+    public String returnBook(String isbn) {
+        Book book = findByIsbn(isbn);
+        if (book == null) {
+            return "Book not found: " + isbn;
+        }
+        if (book.isBorrowed() == false) {
+            return "Book was not borrowed: " + book.getTitle();
+        }
+        book.setBorrowed(false);
+        return null;
+    }
+
+    public Book findByIsbn(String isbn) {
+        if (isbn == null) {
+            return null;
+        }
+        String wanted = isbn.replace("-", "").replace(" ", "");
+        for (int i = 0; i < books.size(); i++) {
+            String have = books.get(i).getIsbn().replace("-", "").replace(" ", "");
+            if (have.equals(wanted)) {
+                return books.get(i);
+            }
+        }
+        return null;
+    }
+
+    public static boolean isValidIsbn(String isbn) {
+        if (isbn == null) {
+            return false;
+        }
+        String cleaned = isbn.replace("-", "").replace(" ", "");
+        if (cleaned.length() == 10) {
+            for (int i = 0; i < 9; i++) {
+                if (Character.isDigit(cleaned.charAt(i)) == false) {
+                    return false;
+                }
+            }
+            char last = cleaned.charAt(9);
+            if (Character.isDigit(last) == false && last != 'X' && last != 'x') {
+                return false;
+            }
+            return true;
+        } else if (cleaned.length() == 13) {
+            for (int i = 0; i < 13; i++) {
+                if (Character.isDigit(cleaned.charAt(i)) == false) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+
+--- FILE: library-project/web/src/main/resources/application.properties ---
+
+server.port=8080
+
+
+--- FILE: library-project/web/src/main/resources/static/index.html ---
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Library Test Page</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table { border-collapse: collapse; margin-top: 10px; }
+        td, th { border: 1px solid black; padding: 5px 10px; }
+        input { margin: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Library Test Page</h1>
+
+    <h2>Books</h2>
+    <button onclick="loadBooks()">Refresh list</button>
+    <label><input type="checkbox" id="onlyAvailable" onchange="loadBooks()"> only available</label>
+    <table>
+        <thead>
+            <tr><th>Title</th><th>Author</th><th>ISBN</th><th>Status</th></tr>
+        </thead>
+        <tbody id="bookRows"></tbody>
+    </table>
+
+    <h2>Add book</h2>
+    Title: <input id="newTitle" size="25">
+    Author: <input id="newAuthor" size="20">
+    ISBN: <input id="newIsbn" size="18">
+    <button onclick="addBook()">Add</button>
+
+    <h2>Borrow / Return</h2>
+    ISBN: <input id="actionIsbn" size="18">
+    <button onclick="borrowBook()">Borrow</button>
+    <button onclick="returnBook()">Return</button>
+
+    <p id="message"></p>
+
+    <script>
+        function showMessage(text) {
+            document.getElementById("message").innerText = text;
+        }
+
+        function loadBooks() {
+            var onlyAvailable = document.getElementById("onlyAvailable").checked;
+            var url = "/api/books";
+            if (onlyAvailable) {
+                url = "/api/books/available";
+            }
+            fetch(url).then(function (res) {
+                return res.json();
+            }).then(function (books) {
+                var html = "";
+                for (var i = 0; i < books.length; i++) {
+                    var status = "Available";
+                    if (books[i].borrowed) {
+                        status = "Borrowed";
+                    }
+                    html += "<tr><td>" + books[i].title + "</td><td>" + books[i].author + "</td><td>" + books[i].isbn + "</td><td>" + status + "</td></tr>";
+                }
+                document.getElementById("bookRows").innerHTML = html;
+            });
+        }
+
+        function addBook() {
+            var data = {
+                title: document.getElementById("newTitle").value,
+                author: document.getElementById("newAuthor").value,
+                isbn: document.getElementById("newIsbn").value
+            };
+            fetch("/api/books", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then(function (res) {
+                return res.json();
+            }).then(function (answer) {
+                showMessage(JSON.stringify(answer));
+                loadBooks();
+            });
+        }
+
+        function borrowBook() {
+            var isbn = document.getElementById("actionIsbn").value;
+            fetch("/api/books/" + isbn + "/borrow", { method: "POST" }).then(function (res) {
+                return res.json();
+            }).then(function (answer) {
+                showMessage(JSON.stringify(answer));
+                loadBooks();
+            });
+        }
+
+        function returnBook() {
+            var isbn = document.getElementById("actionIsbn").value;
+            fetch("/api/books/" + isbn + "/return", { method: "POST" }).then(function (res) {
+                return res.json();
+            }).then(function (answer) {
+                showMessage(JSON.stringify(answer));
+                loadBooks();
+            });
+        }
+
+        loadBooks();
+    </script>
+</body>
+</html>

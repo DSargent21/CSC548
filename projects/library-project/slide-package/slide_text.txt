@@ -1,0 +1,122 @@
+============================================================
+SLIDE-READY TEXT & DIAGRAMS — Library Management System
+For teammate: copy-paste into slides as-is.
+============================================================
+
+Repo links:
+  CSC548 (class repo):  https://github.com/DSargent21/CSC548
+  Library repo:         https://github.com/DSargent21/library-management-system
+
+------------------------------------------------------------
+A. OBJECTIVES (Slide 4)
+------------------------------------------------------------
+- Build a web interface with client- and server-side validation for book data (title, author, ISBN).
+- Implement RESTful CRUD operations: add, list, borrow, and return books.
+- Maintain modular Java architecture (Book, Library, Controller, Service layers) with version control via Git.
+- Validate ISBN format (10 or 13 digits) and enforce duplicate detection before adding records.
+
+------------------------------------------------------------
+B. PROPOSED APPROACH & TECH STACK (Slides 7-8)
+------------------------------------------------------------
+Frontend:        HTML5, CSS, vanilla JavaScript (fetch API)
+Backend:         Java 17, Spring Boot 3.2 (REST API)
+Database:        In-memory ArrayList (persistent DB planned for Phase 2)
+Validation:      ISBN format check (10/13 digits, dashes allowed), duplicate ISBN detection,
+                 required field checks (title, author)
+Tooling:         Maven, Git, GitHub
+
+Architecture / Flow:
+  Client (Browser) -> API Routes (Spring REST) -> Validation Layer -> Service Layer -> Data Store -> JSON Response
+
+Endpoints:
+  GET  /api/books             — list all books
+  GET  /api/books/available   — list available (not borrowed) books
+  POST /api/books             — add a book (JSON body: title, author, isbn)
+  POST /api/books/{isbn}/borrow — borrow a book by ISBN
+  POST /api/books/{isbn}/return — return a book by ISBN
+
+------------------------------------------------------------
+C. DATA MODEL / SCHEMA (Slides 9-10)
+------------------------------------------------------------
+Entity: Book
+  Fields:
+    title    : String  (Required, non-empty, trimmed)
+    author   : String  (Required, non-empty, trimmed)
+    isbn     : String  (Required, 10 or 13 digits after removing dashes/spaces;
+                        ISBN-10 may end in X; unique across all records)
+    borrowed : boolean (Default: false; toggled by borrow/return operations)
+    available: boolean (Derived: true when borrowed == false)
+
+Validation Rules:
+  - ISBN must match 10-digit or 13-digit format (dashes and spaces stripped before check)
+  - ISBN must not already exist in the system (duplicate rejection)
+  - Title and author must be non-empty after trimming
+  - Borrow: fails if book not found or already borrowed
+  - Return: fails if book not found or not currently borrowed
+
+CSV Import Format (data/books.csv):
+  title,author,isbn
+  Pride and Prejudice,Jane Austen,9780141439518
+  Moby Dick,Herman Melville,9780142437247
+  ...
+
+------------------------------------------------------------
+D. TECHNICAL MILESTONES (Slide 11)
+------------------------------------------------------------
+Phase 1 (Current): Repository initialization, system architecture, class design
+                   (Book / Library / Controller / Service), ISBN validation,
+                   CSV dataset import, basic CRUD scaffolding, REST API.
+
+Phase 2:           Persistent database (SQLite/PostgreSQL), user authentication,
+                   complete UI views, enhanced input validation, error handling.
+
+Phase 3:           Integration testing, deployment, edge-case validation,
+                   performance testing, final polish.
+
+------------------------------------------------------------
+E. SCREENSHOT INDEX (which file goes on which slide)
+------------------------------------------------------------
+  repo_commits.png       -> Slide 5  (GitHub commits page, 6 commits Sep 15-17)
+  repo_readme.png        -> Slide 5 or 7 (GitHub repo top-level / README preview)
+  app_landing.png        -> Slide 8  (Working app: book list, add form, borrow/return)
+  app_validation.png     -> Slide 8  (Validation error: "Bad ISBN: 123" shown in red)
+  api_response.png       -> Slide 8  (API endpoint: 200 OK JSON + 400 error response)
+  architecture_diagram.png -> Slide 7 or 8 (Client -> API -> Validation -> Service -> Store)
+
+------------------------------------------------------------
+F. MESSAGE TO PARTNER
+------------------------------------------------------------
+Hey, here is everything from the code/GitHub side for the Phase 1 deck:
+
+1. Assets Attached:
+   - repo_commits.png         -> Slide 5  (GitHub Project Page Showing Commits)
+   - repo_readme.png          -> Slide 5/7 (Repo structure + README)
+   - architecture_diagram.png -> Slide 7/8 (Proposed Approach)
+   - app_landing.png          -> Slide 8  (Working Demo)
+   - app_validation.png       -> Slide 8  (Validation Error State)
+   - api_response.png         -> Slide 8  (API Response)
+
+2. Tech Stack:
+   - Frontend: HTML5 / CSS / Vanilla JS
+   - Backend: Java 17 / Spring Boot 3.2
+   - Database: In-memory (ArrayList) — DB planned Phase 2
+
+3. Objectives (Slide 4):
+   - Build web interface with client/server-side validation for book data
+   - Implement RESTful CRUD: add, list, borrow, return
+   - Maintain modular Java architecture with Git version control
+   - Validate ISBN format (10/13 digits) and enforce duplicate detection
+
+4. Data Schema (Slide 9-10):
+   - Entity: Book { title (String, required), author (String, required),
+                    isbn (String, 10/13 digits, unique),
+                    borrowed (boolean, default false) }
+   - Validation: ISBN format check, duplicate rejection, non-empty title/author
+
+5. Timeline Phases (Slide 11):
+   - Phase 1: Architecture & Scaffolding (DONE)
+   - Phase 2: Core Feature Implementation, DB persistence, UI views
+   - Phase 3: Testing & Deployment
+
+Repo link: https://github.com/DSargent21/library-management-system
+============================================================
