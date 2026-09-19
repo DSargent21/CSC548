@@ -1,11 +1,11 @@
-import java.util.ArrayList;
-
 public class Book {
 
     private String title;
     private String author;
     private String isbn;
     private boolean isBorrowed;
+    private String borrowedBy;
+    private String dueDate;
 
     public Book(String title, String author, String isbn) {
         if (title == null || title.trim().equals("")) {
@@ -22,6 +22,8 @@ public class Book {
         this.author = author.trim();
         this.isbn = isbn.trim();
         this.isBorrowed = false;
+        this.borrowedBy = "";
+        this.dueDate = "";
     }
 
     public static boolean isValidIsbn(String isbn) {
@@ -80,12 +82,39 @@ public class Book {
 
     public void setBorrowed(boolean borrowed) {
         this.isBorrowed = borrowed;
+        if (borrowed == false) {
+            this.borrowedBy = "";
+            this.dueDate = "";
+        }
+    }
+
+    public String getBorrowedBy() {
+        return borrowedBy;
+    }
+
+    public void setBorrowedBy(String borrowedBy) {
+        this.borrowedBy = borrowedBy;
+    }
+
+    public String getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(String dueDate) {
+        this.dueDate = dueDate;
+    }
+
+    public boolean isOverdue(String today) {
+        if (isBorrowed == false || dueDate.equals("")) {
+            return false;
+        }
+        return dueDate.compareTo(today) < 0;
     }
 
     public String toString() {
         String status = "";
         if (isBorrowed == true) {
-            status = "Borrowed";
+            status = "Borrowed by " + borrowedBy + " (due " + dueDate + ")";
         } else {
             status = "Available";
         }
