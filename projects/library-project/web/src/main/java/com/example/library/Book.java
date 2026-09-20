@@ -6,6 +6,8 @@ public class Book {
     private String author;
     private String isbn;
     private boolean borrowed;
+    private String borrowedBy;
+    private String dueDate;
 
     public Book() {
     }
@@ -15,6 +17,8 @@ public class Book {
         this.author = author;
         this.isbn = isbn;
         this.borrowed = false;
+        this.borrowedBy = "";
+        this.dueDate = "";
     }
 
     public String getTitle() {
@@ -47,6 +51,26 @@ public class Book {
 
     public void setBorrowed(boolean borrowed) {
         this.borrowed = borrowed;
+        if (borrowed == false) {
+            this.borrowedBy = "";
+            this.dueDate = "";
+        }
+    }
+
+    public String getBorrowedBy() {
+        return borrowedBy;
+    }
+
+    public void setBorrowedBy(String borrowedBy) {
+        this.borrowedBy = borrowedBy;
+    }
+
+    public String getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(String dueDate) {
+        this.dueDate = dueDate;
     }
 
     public boolean isAvailable() {

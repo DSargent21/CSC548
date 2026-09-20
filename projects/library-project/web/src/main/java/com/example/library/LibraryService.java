@@ -1,5 +1,7 @@
 package com.example.library;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import org.springframework.stereotype.Service;
 
@@ -7,11 +9,15 @@ import org.springframework.stereotype.Service;
 public class LibraryService {
 
     private ArrayList<Book> books = new ArrayList<Book>();
+    private ArrayList<Patron> patrons = new ArrayList<Patron>();
+    private static final int LOAN_DAYS = 14;
 
     public LibraryService() {
         books.add(new Book("Pride and Prejudice", "Jane Austen", "9780141439518"));
         books.add(new Book("Moby Dick", "Herman Melville", "9780142437247"));
         books.add(new Book("Frankenstein", "Mary Shelley", "9780486282114"));
+        patrons.add(new Patron("P001", "Alice Smith"));
+        patrons.add(new Patron("P002", "Bob Jones"));
     }
 
     public ArrayList<Book> getAllBooks() {
@@ -26,6 +32,10 @@ public class LibraryService {
             }
         }
         return result;
+    }
+
+    public ArrayList<Patron> getAllPatrons() {
+        return patrons;
     }
 
     public String addBook(Book book) {
@@ -49,7 +59,25 @@ public class LibraryService {
         return null;
     }
 
-    public String borrowBook(String isbn) {
+    public String addPatron(Patron patron) {
+        if (patron.getId() == null || patron.getId().trim().equals("")) {
+            return "Patron ID cannot be empty.";
+        }
+        if (patron.getName() == null || patron.getName().trim().equals("")) {
+            return "Patron name cannot be empty.";
+        }
+        for (int i = 0; i < patrons.size(); i++) {
+            if (patrons.get(i).getId().equals(patron.getId())) {
+                return "Patron ID already exists: " + patron.getId();
+            }
+        }
+        patron.setId(patron.getId().trim());
+        patron.setName(patron.getName().trim());
+        patrons.add(patron);
+        return null;
+    }
+
+    public String borrowBook(String isbn, String patronId) {
         Book book = findByIsbn(isbn);
         if (book == null) {
             return "Book not found: " + isbn;
@@ -57,7 +85,14 @@ public class LibraryService {
         if (book.isBorrowed() == true) {
             return "Book already borrowed: " + book.getTitle();
         }
+        Patron patron = findPatronById(patronId);
+        if (patron == null) {
+            return "Patron not found: " + patronId;
+        }
         book.setBorrowed(true);
+        book.setBorrowedBy(patron.getName());
+        LocalDate due = LocalDate.now().plusDays(LOAN_DAYS);
+        book.setDueDate(due.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
         return null;
     }
 
@@ -73,6 +108,47 @@ public class LibraryService {
         return null;
     }
 
+    public ArrayList<Book> searchByTitle(String query) {
+        ArrayList<Book> result = new ArrayList<Book>();
+        if (query == null) {
+            return result;
+        }
+        String lower = query.toLowerCase();
+        for (int i = 0; i < books.size(); i++) {
+            if (books.get(i).getTitle().toLowerCase().contains(lower)) {
+                result.add(books.get(i));
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<Book> searchByAuthor(String query) {
+        ArrayList<Book> result = new ArrayList<Book>();
+        if (query == null) {
+            return result;
+        }
+        String lower = query.toLowerCase();
+        for (int i = 0; i < books.size(); i++) {
+            if (books.get(i).getAuthor().toLowerCase().contains(lower)) {
+                result.add(books.get(i));
+            }
+        }
+        return result;
+    }
+
+    public ArrayList<Book> listOverdueBooks() {
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        ArrayList<Book> result = new ArrayList<Book>();
+        for (int i = 0; i < books.size(); i++) {
+            Book b = books.get(i);
+            if (b.isBorrowed() == true && !b.getDueDate().equals("")
+                    && b.getDueDate().compareTo(today) < 0) {
+                result.add(b);
+            }
+        }
+        return result;
+    }
+
     public Book findByIsbn(String isbn) {
         if (isbn == null) {
             return null;
@@ -82,6 +158,18 @@ public class LibraryService {
             String have = books.get(i).getIsbn().replace("-", "").replace(" ", "");
             if (have.equals(wanted)) {
                 return books.get(i);
+            }
+        }
+        return null;
+    }
+
+    public Patron findPatronById(String id) {
+        if (id == null) {
+            return null;
+        }
+        for (int i = 0; i < patrons.size(); i++) {
+            if (patrons.get(i).getId().equals(id)) {
+                return patrons.get(i);
             }
         }
         return null;
