@@ -1,0 +1,11 @@
+PATRON,P001,Alice Smith
+PATRON,P002,Bob Jones
+BOOK,Pride and Prejudice,Jane Austen,9780141439518,false,,
+BOOK,Moby Dick,Herman Melville,9780142437247,false,,
+BOOK,Frankenstein,Mary Shelley,9780486282114,false,,
+BOOK,Dracula,Bram Stoker,9780486411095,false,,
+BOOK,Jane Eyre,Charlotte Bronte,9780141441146,false,,
+BOOK,Wuthering Heights,Emily Bronte,9780141439556,false,,
+BOOK,Great Expectations,Charles Dickens,9780141439563,false,,
+BOOK,The Time Machine,H. G. Wells,9780486284729,false,,
+BOOK,Dune,Frank Herbert,9780441172719,false,,
