@@ -12,60 +12,78 @@ A. OBJECTIVES (Slide 4)
 ------------------------------------------------------------
 - Build a web interface with client- and server-side validation for book data (title, author, ISBN).
 - Implement RESTful CRUD operations: add, list, borrow, and return books.
-- Maintain modular Java architecture (Book, Library, Controller, Service layers) with version control via Git.
-- Validate ISBN format (10 or 13 digits) and enforce duplicate detection before adding records.
+- Track borrower patron records with 14-day loan periods and overdue detection.
+- Maintain modular Java architecture (Book, Patron, Library, Controller, Service layers) with version control via Git.
 
 ------------------------------------------------------------
 B. PROPOSED APPROACH & TECH STACK (Slides 7-8)
 ------------------------------------------------------------
 Frontend:        HTML5, CSS, vanilla JavaScript (fetch API)
 Backend:         Java 17, Spring Boot 3.2 (REST API)
-Database:        In-memory ArrayList (persistent DB planned for Phase 2)
+Database:        In-memory ArrayList + file persistence (persistent DB planned for Phase 2)
 Validation:      ISBN format check (10/13 digits, dashes allowed), duplicate ISBN detection,
-                 required field checks (title, author)
+                 required field checks (title, author), patron ID lookup
+Testing:         Custom test runner (19 assertions: ISBN validation, CRUD, search, save/load)
 Tooling:         Maven, Git, GitHub
 
 Architecture / Flow:
   Client (Browser) -> API Routes (Spring REST) -> Validation Layer -> Service Layer -> Data Store -> JSON Response
 
 Endpoints:
-  GET  /api/books             — list all books
-  GET  /api/books/available   — list available (not borrowed) books
-  POST /api/books             — add a book (JSON body: title, author, isbn)
-  POST /api/books/{isbn}/borrow — borrow a book by ISBN
-  POST /api/books/{isbn}/return — return a book by ISBN
+  GET  /api/books                — list all books
+  GET  /api/books/available      — list available (not borrowed) books
+  GET  /api/books/overdue        — list overdue books
+  GET  /api/books/search?q=&by=  — search by title or author
+  GET  /api/patrons              — list all patrons
+  POST /api/books                — add a book (JSON: title, author, isbn)
+  POST /api/patrons              — add a patron (JSON: id, name)
+  POST /api/books/{isbn}/borrow?patronId= — borrow a book
+  POST /api/books/{isbn}/return  — return a book
 
 ------------------------------------------------------------
 C. DATA MODEL / SCHEMA (Slides 9-10)
 ------------------------------------------------------------
 Entity: Book
   Fields:
-    title    : String  (Required, non-empty, trimmed)
-    author   : String  (Required, non-empty, trimmed)
-    isbn     : String  (Required, 10 or 13 digits after removing dashes/spaces;
-                        ISBN-10 may end in X; unique across all records)
-    borrowed : boolean (Default: false; toggled by borrow/return operations)
-    available: boolean (Derived: true when borrowed == false)
+    title     : String  (Required, non-empty, trimmed)
+    author    : String  (Required, non-empty, trimmed)
+    isbn      : String  (Required, 10 or 13 digits after removing dashes/spaces;
+                         ISBN-10 may end in X; unique across all records)
+    borrowed  : boolean (Default: false; toggled by borrow/return)
+    borrowedBy: String  (Patron name; cleared on return)
+    dueDate   : String  (yyyy-MM-dd, 14 days from borrow date; cleared on return)
+    available : boolean (Derived: true when borrowed == false)
+
+Entity: Patron
+  Fields:
+    id   : String (Required, unique, e.g. "P001")
+    name : String (Required, non-empty)
 
 Validation Rules:
   - ISBN must match 10-digit or 13-digit format (dashes and spaces stripped before check)
-  - ISBN must not already exist in the system (duplicate rejection)
+  - ISBN must not already exist (duplicate rejection)
   - Title and author must be non-empty after trimming
-  - Borrow: fails if book not found or already borrowed
+  - Borrow: fails if book not found, already borrowed, or patron not found
   - Return: fails if book not found or not currently borrowed
+  - Patron ID must be unique
 
 CSV Import Format (data/books.csv):
   title,author,isbn
   Pride and Prejudice,Jane Austen,9780141439518
-  Moby Dick,Herman Melville,9780142437247
+  ...
+
+File Persistence Format (data/library_state.txt):
+  PATRON,P001,Alice Smith
+  BOOK,Dune,Frank Herbert,9780441172719,true,Alice Smith,2025-10-05
   ...
 
 ------------------------------------------------------------
 D. TECHNICAL MILESTONES (Slide 11)
 ------------------------------------------------------------
 Phase 1 (Current): Repository initialization, system architecture, class design
-                   (Book / Library / Controller / Service), ISBN validation,
-                   CSV dataset import, basic CRUD scaffolding, REST API.
+                   (Book / Patron / Library / Controller / Service), ISBN validation,
+                   patron tracking, due dates, search, file persistence, unit tests,
+                   CSV import, REST API, basic frontend styling.
 
 Phase 2:           Persistent database (SQLite/PostgreSQL), user authentication,
                    complete UI views, enhanced input validation, error handling.
@@ -76,11 +94,11 @@ Phase 3:           Integration testing, deployment, edge-case validation,
 ------------------------------------------------------------
 E. SCREENSHOT INDEX (which file goes on which slide)
 ------------------------------------------------------------
-  repo_commits.png       -> Slide 5  (GitHub commits page, 6 commits Sep 15-17)
+  repo_commits.png       -> Slide 5  (GitHub commits: 12 commits, Sep 15-21)
   repo_readme.png        -> Slide 5 or 7 (GitHub repo top-level / README preview)
-  app_landing.png        -> Slide 8  (Working app: book list, add form, borrow/return)
+  app_landing.png        -> Slide 8  (Styled app: book list, search, patrons, borrow/return)
   app_validation.png     -> Slide 8  (Validation error: "Bad ISBN: 123" shown in red)
-  api_response.png       -> Slide 8  (API endpoint: 200 OK JSON + 400 error response)
+  api_response.png       -> Slide 8  (API: borrow 200 OK, search results, 400 error)
   architecture_diagram.png -> Slide 7 or 8 (Client -> API -> Validation -> Service -> Store)
 
 ------------------------------------------------------------
@@ -99,23 +117,24 @@ Hey, here is everything from the code/GitHub side for the Phase 1 deck:
 2. Tech Stack:
    - Frontend: HTML5 / CSS / Vanilla JS
    - Backend: Java 17 / Spring Boot 3.2
-   - Database: In-memory (ArrayList) — DB planned Phase 2
+   - Database: In-memory (ArrayList) + file persistence — DB planned Phase 2
+   - Testing: Custom test runner (19 assertions)
 
 3. Objectives (Slide 4):
    - Build web interface with client/server-side validation for book data
    - Implement RESTful CRUD: add, list, borrow, return
+   - Track patrons with due dates and overdue detection
    - Maintain modular Java architecture with Git version control
-   - Validate ISBN format (10/13 digits) and enforce duplicate detection
 
 4. Data Schema (Slide 9-10):
-   - Entity: Book { title (String, required), author (String, required),
-                    isbn (String, 10/13 digits, unique),
-                    borrowed (boolean, default false) }
-   - Validation: ISBN format check, duplicate rejection, non-empty title/author
+   - Book { title, author, isbn (10/13 digits, unique),
+            borrowed, borrowedBy, dueDate (14-day loan) }
+   - Patron { id (unique), name }
+   - Validation: ISBN format, duplicate rejection, patron lookup
 
 5. Timeline Phases (Slide 11):
-   - Phase 1: Architecture & Scaffolding (DONE)
-   - Phase 2: Core Feature Implementation, DB persistence, UI views
+   - Phase 1: Architecture, CRUD, patrons, search, persistence, tests (DONE)
+   - Phase 2: DB persistence, auth, full UI
    - Phase 3: Testing & Deployment
 
 Repo link: https://github.com/DSargent21/library-management-system
