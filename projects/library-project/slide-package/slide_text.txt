@@ -74,7 +74,7 @@ CSV Import Format (data/books.csv):
 
 File Persistence Format (data/library_state.txt):
   PATRON,P001,Alice Smith
-  BOOK,Dune,Frank Herbert,9780441172719,true,Alice Smith,2025-10-05
+  BOOK,Dune,Frank Herbert,9780441172719,true,Alice Smith,2026-10-05
   ...
 
 ------------------------------------------------------------
@@ -94,7 +94,7 @@ Phase 3:           Integration testing, deployment, edge-case validation,
 ------------------------------------------------------------
 E. SCREENSHOT INDEX (which file goes on which slide)
 ------------------------------------------------------------
-  repo_commits.png       -> Slide 5  (GitHub commits: 12 commits, Sep 15-21)
+  repo_commits.png       -> Slide 5  (GitHub commits: 14 commits, Sep 15-22)
   repo_readme.png        -> Slide 5 or 7 (GitHub repo top-level / README preview)
   app_landing.png        -> Slide 8  (Styled app: book list, search, patrons, borrow/return)
   app_validation.png     -> Slide 8  (Validation error: "Bad ISBN: 123" shown in red)
