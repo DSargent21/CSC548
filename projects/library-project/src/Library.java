@@ -190,3 +190,4 @@ public class Library {
 // fix typo in comment
 // cleanup whitespace
 // TODO: add more tests later
+// fix: handle null case
