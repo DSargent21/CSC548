@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Movie Result</title>
+</head>
+<body>
+
+<h1 th:text="${message}">Welcome to the Software Engineering Class</h1>
+
+<p>Moviename: <span th:text="${movieName}">Movie</span></p>
+<p th:text="${favorite}">Movie is my favorite movie</p>
+
+<a th:href="@{/showForm}">Back to form</a>
+
+</body>
+</html>

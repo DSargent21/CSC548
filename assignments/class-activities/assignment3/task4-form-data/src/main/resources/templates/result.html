@@ -1,0 +1,18 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Form Result</title>
+</head>
+<body>
+
+<h1>Form Result</h1>
+
+<p>Your Name: <span th:text="${param.name}">Name</span></p>
+<p>Favorite Sport Name: <span th:text="${param.sportName}">Sport</span></p>
+
+<a th:href="@{/showForm}">Back to form</a>
+
+</body>
+</html>

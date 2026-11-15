@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Student Form</title>
+</head>
+<body>
+
+<h1>Student Form</h1>
+
+<form th:action="@{/processForm}" method="GET">
+    <p>
+        <label for="name">Your Name</label><br>
+        <input type="text" id="name" name="name" required>
+    </p>
+    <p>
+        <label for="sportName">Favorite Sport Name:</label><br>
+        <input type="text" id="sportName" name="sportName" required>
+    </p>
+    <input type="submit" value="Submit">
+</form>
+
+</body>
+</html>
